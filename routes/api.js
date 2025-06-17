@@ -10,9 +10,36 @@ module.exports = function (app) {
   
   app.route('/api/threads/:board')
     .get((req, res) => {
-      const board = req.params.board;
-      const threads = boards.get(board) || [];
-      res.json(threads);
+    const board = req.params.board;
+    const threads = boards.get(board) || [];
+    
+    // Get most recent 10 threads
+    const recentThreads = threads
+      .sort((a, b) => b.bumped_on - a.bumped_on)
+      .slice(0, 10)
+      .map(thread => {
+        // Get only most recent 3 replies
+        const recentReplies = thread.replies
+          .sort((a, b) => b.created_on - a.created_on)
+          .slice(0, 3)
+          .map(reply => ({
+            _id: reply._id,
+            text: reply.text,
+            created_on: reply.created_on
+          }));
+
+        // Return thread without sensitive fields
+        return {
+          _id: thread._id,
+          text: thread.text,
+          created_on: thread.created_on,
+          bumped_on: thread.bumped_on,
+          replies: recentReplies,
+          replycount: thread.replies.length
+        };
+      });
+
+    res.json(recentThreads);
     })
     .post((req, res) => {
       const board = req.params.board;
