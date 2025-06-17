@@ -3,6 +3,7 @@
 	"version": "0.0.1",
 	"description": "InfoSec project for freeCodeCamp",
 	"main": "server.js",
+	"type": "module",
 	"scripts": {
 		"start": "node server.js",
 		"test": "mocha --ui tdd tests/",

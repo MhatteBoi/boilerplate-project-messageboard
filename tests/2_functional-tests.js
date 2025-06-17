@@ -1,9 +1,10 @@
-const chaiHttp = require('chai-http');
-const chai = require('chai');
-const assert = chai.assert;
-const server = require('../server');
+(async () => {
+  const chai = await import('chai');
+  const chaiHttp = await import('chai-http');
+  const { assert } = chai;
+  const server = await import('../server.js');
 
-chai.use(chaiHttp);
+  chai.default.use(chaiHttp.default);
 
 suite('Functional Tests', function() {
   let testThreadId;
@@ -178,3 +179,4 @@ suite('Functional Tests', function() {
     });
   });
 });
+})();
