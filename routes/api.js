@@ -10,6 +10,7 @@ module.exports = function (app) {
   
   app.route('/api/threads/:board')
     .get((req, res) => {
+      
     const board = req.params.board;
     const threads = boards.get(board) || [];
     
@@ -41,6 +42,8 @@ module.exports = function (app) {
 
     res.json(recentThreads);
     })
+
+
     .post((req, res) => {
       const board = req.params.board;
       const { text, delete_password } = req.body;
@@ -80,11 +83,11 @@ module.exports = function (app) {
       }
     })
     .put((req, res) => {
-      const board = req.params.board; 
-      const { report_id } = req.body;
+      const board = req.params.board;
+      const { thread_id } = req.body;  // Changed from report_id to thread_id
       
       const threads = boards.get(board);
-      const thread = threads?.find(t => t._id === report_id);
+      const thread = threads?.find(t => t._id === thread_id);
       
       if (!thread) return res.send('thread not found');
       
@@ -101,7 +104,22 @@ module.exports = function (app) {
       const thread = threads?.find(t => t._id === thread_id);
       
       if (!thread) return res.send('thread not found');
-      res.json(thread);
+
+      // Format thread data without sensitive fields
+      const safeThread = {
+        _id: thread._id,
+        text: thread.text,
+        created_on: thread.created_on,
+        bumped_on: thread.bumped_on,
+        replies: thread.replies.map(reply => ({
+          _id: reply._id,
+          text: reply.text,
+          created_on: reply.created_on
+        })),
+        replycount: thread.replies.length
+      };
+
+      res.json(safeThread);
     })
     .post((req, res) => {
       const board = req.params.board;
