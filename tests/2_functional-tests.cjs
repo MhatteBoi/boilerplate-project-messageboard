@@ -1,20 +1,21 @@
-(async () => {
-  const chai = await import('chai');
-  const chaiHttp = await import('chai-http');
-  const { assert } = chai;
-  const server = await import('../server.js');
+import chai from 'chai';
+import chaiHttp from 'chai-http';
+import server from '../server.js';
 
-  chai.default.use(chaiHttp.default);
+const assert = chai.assert;
+chai.use(chaiHttp);
+
+let testThreadId;
+let testReplyId;
+const testBoard = 'test';
+const threadPassword = 'test123';
+const replyPassword = 'reply123';
 
 suite('Functional Tests', function() {
-  let testThreadId;
-  let testReplyId;
-  const testBoard = 'test';
-  const threadPassword = 'test123';
-  const replyPassword = 'reply123';
+
 
   suite('API ROUTING FOR /api/threads/:board', function() {
-    
+
     test('POST new thread', function(done) {
       chai.request(server)
         .post(`/api/threads/${testBoard}`)
@@ -62,7 +63,7 @@ suite('Functional Tests', function() {
       chai.request(server)
         .put(`/api/threads/${testBoard}`)
         .send({
-          report_id: testThreadId
+          thread_id: testThreadId
         })
         .end(function(err, res) {
           assert.equal(res.status, 200);
@@ -87,20 +88,19 @@ suite('Functional Tests', function() {
   });
 
   suite('API ROUTING FOR /api/replies/:board', function() {
-    
-    // Create a new thread for reply tests
     before(function(done) {
       chai.request(server)
         .post(`/api/threads/${testBoard}`)
         .send({
-          text: 'Test Thread for Replies',
+          text: 'Thread for reply tests',
           delete_password: threadPassword
         })
         .end(function(err, res) {
           chai.request(server)
             .get(`/api/threads/${testBoard}`)
             .end(function(err, res) {
-              testThreadId = res.body[0]._id;
+              // Find the thread we just created (should be first)
+              replyThreadId = res.body[0]._id;
               done();
             });
         });
@@ -110,8 +110,8 @@ suite('Functional Tests', function() {
       chai.request(server)
         .post(`/api/replies/${testBoard}`)
         .send({
-          thread_id: testThreadId,
-          text: 'Test Reply',
+          thread_id: replyThreadId,
+          text: 'A reply',
           delete_password: replyPassword
         })
         .end(function(err, res) {
@@ -123,13 +123,11 @@ suite('Functional Tests', function() {
     test('GET thread with all replies', function(done) {
       chai.request(server)
         .get(`/api/replies/${testBoard}`)
-        .query({ thread_id: testThreadId })
+        .query({ thread_id: replyThreadId })
         .end(function(err, res) {
           assert.equal(res.status, 200);
           assert.property(res.body, 'replies');
-          if (res.body.replies.length > 0) {
-            testReplyId = res.body.replies[0]._id;
-          }
+          replyId = res.body.replies[0]._id;
           done();
         });
     });
@@ -138,8 +136,8 @@ suite('Functional Tests', function() {
       chai.request(server)
         .delete(`/api/replies/${testBoard}`)
         .send({
-          thread_id: testThreadId,
-          reply_id: testReplyId,
+          thread_id: replyThreadId,
+          reply_id: replyId,
           delete_password: 'wrongpassword'
         })
         .end(function(err, res) {
@@ -153,8 +151,8 @@ suite('Functional Tests', function() {
       chai.request(server)
         .put(`/api/replies/${testBoard}`)
         .send({
-          thread_id: testThreadId,
-          reply_id: testReplyId
+          thread_id: replyThreadId,
+          reply_id: replyId
         })
         .end(function(err, res) {
           assert.equal(res.status, 200);
@@ -167,8 +165,8 @@ suite('Functional Tests', function() {
       chai.request(server)
         .delete(`/api/replies/${testBoard}`)
         .send({
-          thread_id: testThreadId,
-          reply_id: testReplyId,
+          thread_id: replyThreadId,
+          reply_id: replyId,
           delete_password: replyPassword
         })
         .end(function(err, res) {
@@ -179,4 +177,3 @@ suite('Functional Tests', function() {
     });
   });
 });
-})();
